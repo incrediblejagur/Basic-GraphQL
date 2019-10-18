@@ -11,7 +11,6 @@ let test = async (search) => {
     .get('https://itunes.apple.com/search?term='+search)
     .then(function (response) {
     let data = response.data.results
-    console.log(data)
     for(let item of data){
       if(item.kind === 'song'){
         array.push(item.trackName)
