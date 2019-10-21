@@ -2,10 +2,43 @@ const express = require('express');
 const graphqlHTTP = require('express-graphql');
 const { buildSchema } = require('graphql');
 const axios = require('axios');
+const mongoose = require('mongoose')
+const Song = require('./model')
 let app = express();
 
+const url = 'mongodb://localhost:27017/testdb'
 
-let test = async (search) => {
+mongoose.connect(url ,{useUnifiedTopology: true,useNewUrlParser: true}); // establishing the connection
+mongoose.connection
+.once('open', () => console.log('Connection established'))
+.on('error', (error) => {
+    console.log('Warning : ' + error); 
+});
+
+
+let getArtistSongs = async () => {
+  let a = Song.find({artist:'Jeremy Loops'});
+    a.exec((err,docs) => {
+    console.log(docs[0].song)
+    return docs[0].song;
+  })
+}
+
+// let mongoAdd = () => {
+//   let todo = new jack({breed:'a',age:'5'});
+
+// // let todo = new Dogs({todo_description:'a',todo_responsible:'b',todo_priority:'c',todo_completed:true});
+// todo.save()
+//     .then(todo => {
+//       console.log('added')
+//     })
+//     .catch(err => {
+//       console.log('error')
+//     });
+//   }
+//   mongoAdd()
+
+let getFromItunesAPI = async (search) => {
   let array = [];
    await axios
     .get('https://itunes.apple.com/search?term='+search)
@@ -17,7 +50,8 @@ let test = async (search) => {
       }
     }
     });
-    return array
+    let todo = new Song({artist:search,song:array});
+    todo.save()
 }
 
 
@@ -33,7 +67,7 @@ let schema = buildSchema(`
 let root = {
   hello: () => 'Hello World',
   song: async () => {
-    return await test('Jeremy Loops');
+    return await getArtistSongs();
   },
 };
 app.use('/graphql', graphqlHTTP({
@@ -44,8 +78,12 @@ app.use('/graphql', graphqlHTTP({
 
 app.get('/:search', (req,res) => {
   let {search} = req.params
-  test(search)
+  getFromItunesAPI(search)
 });
+
+// app.get('/', (req,res) => {
+//   res.sendFile('./public/index.html')
+// })
 
 app.listen(4000);
 console.log('Running a GraphQL API server at localhost:4000/graphql');
